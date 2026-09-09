@@ -8,7 +8,9 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const connectionString = process.env.DATABASE_URL || '';
 const pool = new pg.Pool({ connectionString });
-const adapter = new PrismaPg(pool, { schema: 'edumentor' });
+const urlSchemaMatch = connectionString.match(/schema=([^&]+)/);
+const schema = urlSchemaMatch ? urlSchemaMatch[1] : 'public';
+const adapter = new PrismaPg(pool, { schema });
 
 declare global {
   var prismaGlobal: PrismaClient | undefined;
