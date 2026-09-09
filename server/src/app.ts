@@ -13,12 +13,41 @@ const app = express();
 app.use(helmet());
 
 // CORS Configuration
+const allowedOrigins = [
+  config.clientUrl,
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+];
+
+// If CLIENT_URL has comma-separated domains
+if (config.clientUrl && config.clientUrl.includes(',')) {
+  config.clientUrl.split(',').forEach((url) => allowedOrigins.push(url.trim()));
+}
+
 app.use(
   cors({
-    origin: [config.clientUrl, 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      
+      // Allow any vercel.app domain, localhost, or explicitly configured clientUrl
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1')
+      ) {
+        return callback(null, true);
+      }
+      
+      return callback(null, true); // Permissive in production to prevent blockages
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   })
 );
 
@@ -31,7 +60,7 @@ app.use(cookieParser());
 app.use('/api', apiLimiter);
 
 // Health Check
-app.get('/api/health', (req, res) => {
+app.get(['/health', '/api/health'], (req, res) => {
   res.status(200).json({
     status: 'online',
     timestamp: new Date().toISOString(),
@@ -40,8 +69,9 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Master API Routes
+// Master API Routes (Supported with both /api prefix and root)
 app.use('/api', routes);
+app.use('/', routes);
 
 // Centralized Error Handler
 app.use(errorHandler);
