@@ -11,9 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@esbuild/win32-x64": "^0.28.2",
     "@hookform/resolvers": "^3.6.0",
-    "@rollup/rollup-win32-x64-msvc": "^4.63.1",
     "@tanstack/react-query": "^5.40.0",
     "axios": "^1.7.2",
     "clsx": "^2.1.1",
