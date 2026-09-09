@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AppError } from '../utils/appError.js';
-import { v4 as uuidv4 } from 'uuid';
 
 // Student: Get my tickets
 export const getMyTickets = asyncHandler(async (req: Request, res: Response) => {
