@@ -14,12 +14,30 @@ export const errorHandler = (
   if (err instanceof AppError) {
     statusCode = err.statusCode;
     message = err.message;
+  } else if (err.name === 'ZodError' || (err as any).issues) {
+    statusCode = 400;
+    const issues = (err as any).issues;
+    message = Array.isArray(issues) && issues.length > 0 ? issues[0].message : 'Validation failed';
+  } else if ((err as any).code === 'P2002') {
+    statusCode = 400;
+    message = 'An account with this email already exists. Please sign in.';
+  } else if ((err as any).code === 'P2025') {
+    statusCode = 404;
+    message = 'Requested record not found.';
+  } else if (err.name === 'JsonWebTokenError') {
+    statusCode = 401;
+    message = 'Invalid authentication token.';
+  } else if (err.name === 'TokenExpiredError') {
+    statusCode = 401;
+    message = 'Authentication token has expired. Please sign in again.';
   } else if (err.name === 'ValidationError') {
     statusCode = 400;
     message = err.message;
   } else if (err.name === 'CastError') {
     statusCode = 400;
     message = 'Invalid ID format';
+  } else if (err.message) {
+    message = err.message;
   }
 
   logger.error({
