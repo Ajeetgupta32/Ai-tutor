@@ -9,6 +9,7 @@ import {
   registerWithOtp,
   verifyAccountOtp,
   resetPasswordOtp,
+  resetPasswordDirect,
 } from '../controllers/auth.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
@@ -21,6 +22,7 @@ router.post('/verify-otp', verifyOtp);
 router.post('/register-with-otp', registerWithOtp);
 router.post('/verify-account-otp', verifyAccountOtp);
 router.post('/reset-password-otp', resetPasswordOtp);
+router.post('/reset-password', resetPasswordDirect);
 router.post('/register', validate(registerSchema), register);
 router.post('/login', validate(loginSchema), login);
 router.post('/logout', logout);

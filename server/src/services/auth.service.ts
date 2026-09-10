@@ -200,6 +200,28 @@ export class AuthService {
     return { user: this.sanitizeUser(updatedUser), token };
   }
 
+  static async resetPasswordDirect(data: { email: string; newPassword: string }) {
+    const emailLower = data.email.trim().toLowerCase();
+    if (!data.newPassword || data.newPassword.length < 6) {
+      throw new AppError('New password must be at least 6 characters long', 400);
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: emailLower } });
+    if (!user) {
+      throw new AppError('No registered account found with this email address.', 404);
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(data.newPassword, salt);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, isEmailVerified: true },
+    });
+
+    return { message: 'Password has been reset successfully. You can now log in.' };
+  }
+
   /**
    * Reset Password with OTP verification
    */

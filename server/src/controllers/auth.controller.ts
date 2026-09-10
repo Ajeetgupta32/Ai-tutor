@@ -68,6 +68,15 @@ export const verifyAccountOtp = asyncHandler(async (req: Request, res: Response)
   });
 });
 
+export const resetPasswordDirect = asyncHandler(async (req: Request, res: Response) => {
+  const result = await AuthService.resetPasswordDirect(req.body);
+
+  res.status(200).json({
+    success: true,
+    message: result.message,
+  });
+});
+
 export const resetPasswordOtp = asyncHandler(async (req: Request, res: Response) => {
   const result = await AuthService.resetPasswordWithOtp(req.body);
 

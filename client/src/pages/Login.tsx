@@ -8,7 +8,7 @@ import { Card } from '../components/ui/Card.js';
 import { GraduationCap, KeyRound, ArrowLeft, ShieldCheck, Mail } from 'lucide-react';
 
 export const Login: React.FC = () => {
-  const { login, sendOtp, resetPasswordOtp } = useAuth();
+  const { login, resetPassword } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -20,10 +20,8 @@ export const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Forgot password / OTP state
-  const [forgotStep, setForgotStep] = useState<'email' | 'otp'>('email');
+  // Forgot password direct state
   const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotOtp, setForgotOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
 
@@ -47,40 +45,20 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleSendResetOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!forgotEmail.trim()) return;
-    setForgotLoading(true);
-
-    try {
-      await sendOtp(forgotEmail, 'password_reset');
-      toast('success', 'Reset Code Sent!', 'Please check your email inbox for your 6-digit password reset code.');
-      setForgotStep('otp');
-    } catch (err: any) {
-      toast('error', 'Failed to send OTP', err.response?.data?.message || 'Email not registered');
-    } finally {
-      setForgotLoading(false);
-    }
-  };
-
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!forgotOtp.trim() || !newPassword.trim()) return;
+    if (!forgotEmail.trim() || !newPassword.trim()) return;
     setForgotLoading(true);
 
     try {
-      await resetPasswordOtp({
-        email: forgotEmail,
-        otp: forgotOtp,
-        newPassword,
-      });
+      await resetPassword(forgotEmail, newPassword);
       toast('success', 'Password Reset Successful', 'You can now sign in with your new password.');
       setViewMode('login');
-      setForgotStep('email');
       setEmail(forgotEmail);
       setPassword('');
+      setNewPassword('');
     } catch (err: any) {
-      toast('error', 'Reset Failed', err.response?.data?.message || 'Invalid or expired OTP');
+      toast('error', 'Reset Failed', err.response?.data?.message || 'Could not reset password. Please check your email.');
     } finally {
       setForgotLoading(false);
     }
@@ -167,68 +145,35 @@ export const Login: React.FC = () => {
               <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-3 border border-amber-200">
                 <KeyRound className="w-6 h-6" />
               </div>
-              <h2 className="text-xl font-bold text-slate-900">Reset Password with OTP</h2>
+              <h2 className="text-xl font-bold text-slate-900">Reset Your Password</h2>
               <p className="text-xs text-slate-500 mt-1">
-                {forgotStep === 'email'
-                  ? 'Enter your registered email to receive a 6-digit verification code'
-                  : `Enter the 6-digit code sent to ${forgotEmail}`}
+                Enter your account email and your new password
               </p>
             </div>
 
-            {forgotStep === 'email' ? (
-              <form onSubmit={handleSendResetOtp} className="space-y-4">
-                <Input
-                  label="Registered Email Address"
-                  type="email"
-                  placeholder="student@example.com"
-                  value={forgotEmail}
-                  onChange={(e) => setForgotEmail(e.target.value)}
-                  required
-                />
-                <Button type="submit" className="w-full" isLoading={forgotLoading}>
-                  <Mail className="w-4 h-4 mr-1.5" /> Send Verification Code
-                </Button>
-              </form>
-            ) : (
-              <form onSubmit={handleResetPassword} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">6-Digit OTP Code</label>
-                  <input
-                    type="text"
-                    maxLength={6}
-                    placeholder="123456"
-                    value={forgotOtp}
-                    onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, ''))}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-center text-lg font-mono font-bold tracking-widest text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                    required
-                  />
-                </div>
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <Input
+                label="Registered Email Address"
+                type="email"
+                placeholder="student@example.com"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                required
+              />
 
-                <Input
-                  label="New Password"
-                  type="password"
-                  placeholder="Minimum 6 characters"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                />
+              <Input
+                label="New Password"
+                type="password"
+                placeholder="Minimum 6 characters"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
 
-                <Button type="submit" className="w-full" isLoading={forgotLoading}>
-                  <ShieldCheck className="w-4 h-4 mr-1.5" /> Reset Password & Continue
-                </Button>
-
-                <div className="text-center pt-2">
-                  <button
-                    type="button"
-                    onClick={handleSendResetOtp}
-                    className="text-xs font-semibold text-blue-600 hover:underline"
-                    disabled={forgotLoading}
-                  >
-                    Didn't receive code? Resend OTP
-                  </button>
-                </div>
-              </form>
-            )}
+              <Button type="submit" className="w-full" isLoading={forgotLoading}>
+                <ShieldCheck className="w-4 h-4 mr-1.5" /> Set New Password & Sign In
+              </Button>
+            </form>
           </div>
         )}
       </Card>
