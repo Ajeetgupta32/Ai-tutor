@@ -42,8 +42,9 @@ export const StudyPlanner: React.FC = () => {
   const fetchPlans = async () => {
     try {
       const res = await API.get('/study-plans');
-      if (res.data.success) {
-        setPlans(res.data.data || []);
+      if (res.data?.success) {
+        const raw = res.data.data?.studyPlans || res.data.data || res.data.studyPlans || [];
+        setPlans(Array.isArray(raw) ? raw : []);
       }
     } catch (e) {
       console.error(e);
@@ -146,8 +147,25 @@ export const StudyPlanner: React.FC = () => {
             </Card>
           ) : (
             <div className="space-y-8">
-              {plans.map((plan) => {
-                const days = (plan.scheduleJson as any) || [];
+              {(Array.isArray(plans) ? plans : []).map((plan) => {
+                const rawDays = plan.scheduleJson;
+                const days: any[] = Array.isArray(rawDays)
+                  ? rawDays
+                  : Array.isArray((rawDays as any)?.days)
+                  ? (rawDays as any).days
+                  : Array.isArray((rawDays as any)?.dailySchedule)
+                  ? (rawDays as any).dailySchedule
+                  : typeof rawDays === 'string'
+                  ? (() => {
+                      try {
+                        const parsed = JSON.parse(rawDays);
+                        return Array.isArray(parsed) ? parsed : parsed?.days || parsed?.dailySchedule || [];
+                      } catch {
+                        return [];
+                      }
+                    })()
+                  : [];
+
                 return (
                   <Card key={plan.id} className="p-6 space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
@@ -202,12 +220,13 @@ export const StudyPlanner: React.FC = () => {
                           </div>
 
                           <div className="space-y-1.5 pt-1">
-                            {d.tasks?.map((t: string, tIdx: number) => (
-                              <div key={tIdx} className="flex items-start gap-2 text-slate-600">
-                                <CheckSquare className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
-                                <span className="leading-tight">{t}</span>
-                              </div>
-                            ))}
+                            {Array.isArray(d.tasks) &&
+                              d.tasks.map((t: string, tIdx: number) => (
+                                <div key={tIdx} className="flex items-start gap-2 text-slate-600">
+                                  <CheckSquare className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
+                                  <span className="leading-tight">{t}</span>
+                                </div>
+                              ))}
                           </div>
                         </div>
                       ))}

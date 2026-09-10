@@ -14,7 +14,7 @@ export const getStudyPlans = asyncHandler(async (req: Request, res: Response) =>
 
   res.status(200).json({
     success: true,
-    data: { studyPlans },
+    data: studyPlans,
     studyPlans,
   });
 });

@@ -99,10 +99,10 @@ export const AdminAISettings: React.FC = () => {
           <Card className="p-6 space-y-4">
             <h3 className="font-extrabold text-base text-slate-900">Token Consumption by Feature Area</h3>
             <div className="divide-y divide-slate-100 text-xs">
-              {aiData?.featureBreakdown?.map((fb: any, idx: number) => (
+              {(Array.isArray(aiData?.featureBreakdown) ? aiData.featureBreakdown : []).map((fb: any, idx: number) => (
                 <div key={idx} className="py-3 flex items-center justify-between">
                   <div>
-                    <span className="font-bold text-slate-900 capitalize">{fb.actionType.replace('_', ' ')}</span>
+                    <span className="font-bold text-slate-900 capitalize">{(fb.actionType || '').replace('_', ' ')}</span>
                     <span className="text-slate-400 block text-[11px]">{fb._count?.id || 1} API calls</span>
                   </div>
                   <span className="font-extrabold text-purple-600">{fb._sum?.tokensUsed || 0} tokens</span>
@@ -114,7 +114,7 @@ export const AdminAISettings: React.FC = () => {
           {/* Recent AI Query Telemetry */}
           <Card className="p-6 space-y-4">
             <h3 className="font-extrabold text-base text-slate-900">Recent AI Execution Logs</h3>
-            {aiData?.recentAiLogs?.length === 0 ? (
+            {!aiData?.recentAiLogs || aiData.recentAiLogs.length === 0 ? (
               <p className="text-xs text-slate-400 italic">No recent AI logs.</p>
             ) : (
               <div className="overflow-x-auto text-xs">
@@ -128,7 +128,7 @@ export const AdminAISettings: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {aiData?.recentAiLogs?.map((log: any) => (
+                    {(Array.isArray(aiData?.recentAiLogs) ? aiData.recentAiLogs : []).map((log: any) => (
                       <tr key={log.id} className="hover:bg-slate-50">
                         <td className="px-3 py-2.5 font-semibold text-slate-800">{log.user?.name || 'Student'}</td>
                         <td className="px-3 py-2.5 font-medium text-blue-600 capitalize">{log.actionType}</td>

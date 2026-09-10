@@ -35,8 +35,9 @@ export const Certificates: React.FC = () => {
   const fetchCertificates = async () => {
     try {
       const res = await API.get('/certificates');
-      if (res.data.success) {
-        setCertificates(res.data.data || []);
+      if (res.data?.success) {
+        const raw = res.data.data?.certificates || res.data.data || [];
+        setCertificates(Array.isArray(raw) ? raw : []);
       }
     } catch (e) {
       console.error(e);
@@ -148,11 +149,11 @@ export const Certificates: React.FC = () => {
                 </p>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {certificates.map((cert) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {(Array.isArray(certificates) ? certificates : []).map((cert) => (
                   <Card
                     key={cert.id}
-                    className="p-6 bg-white border-amber-200 hover:border-amber-400 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                    className="p-6 bg-white border border-slate-200 shadow-xs flex flex-col justify-between space-y-4 hover:border-amber-400 transition-all"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">

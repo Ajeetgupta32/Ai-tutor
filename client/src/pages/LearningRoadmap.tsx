@@ -30,9 +30,10 @@ export const LearningRoadmap: React.FC = () => {
     setLoading(true);
     try {
       const res = await API.get(`/progress/roadmap?subject=${encodeURIComponent(selectedSubject)}`);
-      if (res.data.success) {
-        setNodes(res.data.data.nodes || []);
-        setOverallProgress(res.data.data.overallProgress || 0);
+      if (res.data?.success) {
+        const raw = res.data.data?.nodes || res.data.data || [];
+        setNodes(Array.isArray(raw) ? raw : []);
+        setOverallProgress(res.data.data?.overallProgress || 0);
       }
     } catch (err) {
       console.error(err);
@@ -117,7 +118,7 @@ export const LearningRoadmap: React.FC = () => {
               <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Concept Milestones</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {nodes.map((node, index) => {
+                {(Array.isArray(nodes) ? nodes : []).map((node, index) => {
                   const isLocked = node.status === 'locked';
                   const isMastered = node.status === 'mastered';
                   const isInProgress = node.status === 'in_progress';

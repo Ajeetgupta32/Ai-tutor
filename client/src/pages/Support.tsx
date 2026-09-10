@@ -34,8 +34,9 @@ export const Support: React.FC = () => {
   const fetchTickets = async () => {
     try {
       const res = await API.get('/support/tickets');
-      if (res.data.success) {
-        setTickets(res.data.data || []);
+      if (res.data?.success) {
+        const raw = res.data.data?.tickets || res.data.data || [];
+        setTickets(Array.isArray(raw) ? raw : []);
       }
     } catch (e) {
       console.error(e);
@@ -126,7 +127,7 @@ export const Support: React.FC = () => {
               </Card>
             ) : (
               <div className="space-y-4">
-                {tickets.map((t) => (
+                {(Array.isArray(tickets) ? tickets : []).map((t) => (
                   <Card key={t.id} className="p-6 space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
                       <div>

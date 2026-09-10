@@ -384,7 +384,7 @@ export const AITutor: React.FC = () => {
                   No previous sessions yet
                 </div>
               ) : (
-                conversations.map((conv) => (
+                (Array.isArray(conversations) ? conversations : []).map((conv) => (
                   <div
                     key={conv._id}
                     onClick={() => setActiveConvId(conv._id)}
@@ -532,7 +532,7 @@ export const AITutor: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                messages.map((m) => (
+                (Array.isArray(messages) ? messages : []).map((m) => (
                   <div
                     key={m._id}
                     className={`flex flex-col gap-1 max-w-3xl ${m.sender === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'}`}

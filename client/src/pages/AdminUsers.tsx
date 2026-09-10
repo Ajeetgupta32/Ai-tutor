@@ -36,8 +36,9 @@ export const AdminUsers: React.FC = () => {
   const fetchUsers = async () => {
     try {
       const res = await API.get('/admin/users');
-      if (res.data.success) {
-        setUsers(res.data.data.users || []);
+      if (res.data?.success) {
+        const raw = res.data.data?.users || res.data.data || [];
+        setUsers(Array.isArray(raw) ? raw : []);
       }
     } catch (e) {
       toast('error', 'Failed to fetch user directory');
@@ -89,10 +90,11 @@ export const AdminUsers: React.FC = () => {
     return <Preloader message="Loading user directory..." subMessage="Fetching student profiles and permissions" />;
   }
 
-  const filtered = users.filter((u) => {
+  const userList = Array.isArray(users) ? users : [];
+  const filtered = userList.filter((u) => {
     const matchesSearch =
-      u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase());
+      (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (u.email || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'all' || u.role === roleFilter;
     return matchesSearch && matchesRole;
   });
@@ -272,7 +274,7 @@ export const AdminUsers: React.FC = () => {
                     <p className="text-slate-400 italic">No quiz attempts logged.</p>
                   ) : (
                     <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                      {selectedUserDetail.quizAttempts?.map((qa: any) => (
+                      {(Array.isArray(selectedUserDetail.quizAttempts) ? selectedUserDetail.quizAttempts : []).map((qa: any) => (
                         <div
                           key={qa.id}
                           className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between"

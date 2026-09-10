@@ -15,7 +15,7 @@ export const getActiveAnnouncements = asyncHandler(async (req: Request, res: Res
 
   res.status(200).json({
     success: true,
-    data: { announcements },
+    data: announcements,
     announcements,
   });
 });
@@ -27,7 +27,7 @@ export const getAllAnnouncements = asyncHandler(async (req: Request, res: Respon
 
   res.status(200).json({
     success: true,
-    data: { announcements },
+    data: announcements,
     announcements,
   });
 });

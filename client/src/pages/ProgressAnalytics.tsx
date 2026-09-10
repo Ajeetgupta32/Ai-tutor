@@ -33,13 +33,13 @@ export const ProgressAnalytics: React.FC = () => {
     const fetchAnalytics = async () => {
       try {
         const res = await API.get('/progress/analytics');
-        if (res.data.success) {
-          const d = res.data.data;
-          setScoreOverTime(d.scoreOverTime || []);
-          setSubjectPerformance(d.subjectPerformance || []);
-          setDifficultyPerformance(d.difficultyPerformance || []);
-          setStudyTimeChart(d.studyTimeChart || []);
-          setAchievements(d.achievements || []);
+        if (res.data?.success) {
+          const d = res.data.data || {};
+          setScoreOverTime(Array.isArray(d.scoreOverTime) ? d.scoreOverTime : []);
+          setSubjectPerformance(Array.isArray(d.subjectPerformance) ? d.subjectPerformance : []);
+          setDifficultyPerformance(Array.isArray(d.difficultyPerformance) ? d.difficultyPerformance : []);
+          setStudyTimeChart(Array.isArray(d.studyTimeChart) ? d.studyTimeChart : []);
+          setAchievements(Array.isArray(d.achievements) ? d.achievements : []);
         }
       } catch (err) {
         // ignore
@@ -188,7 +188,7 @@ export const ProgressAnalytics: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {achievements.map((ach) => (
+                {(Array.isArray(achievements) ? achievements : []).map((ach) => (
                   <div key={ach._id} className="p-4 rounded-xl border border-amber-200 bg-amber-50/50 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-600 flex-shrink-0">
                       <Trophy className="w-5 h-5" />

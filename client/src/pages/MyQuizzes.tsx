@@ -18,8 +18,9 @@ export const MyQuizzes: React.FC = () => {
     const fetchQuizzes = async () => {
       try {
         const res = await API.get('/quizzes');
-        if (res.data.success) {
-          setQuizzes(res.data.data.quizzes);
+        if (res.data?.success) {
+          const raw = res.data.data?.quizzes || res.data.data || res.data.quizzes || [];
+          setQuizzes(Array.isArray(raw) ? raw : []);
         }
       } catch (err) {
         // ignore
@@ -70,7 +71,7 @@ export const MyQuizzes: React.FC = () => {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {quizzes.map((q) => (
+              {(Array.isArray(quizzes) ? quizzes : []).map((q) => (
                 <Card key={q._id} hoverEffect className="flex flex-col justify-between p-5 bg-white border border-slate-200">
                   <div>
                     <div className="flex items-center justify-between mb-2.5">

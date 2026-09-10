@@ -77,7 +77,7 @@ export const QuizPlayer: React.FC = () => {
     if (!quiz || submitting) return;
     setSubmitting(true);
 
-    const userAnswersPayload = quiz.questions.map((q) => ({
+    const userAnswersPayload = (Array.isArray(quiz.questions) ? quiz.questions : []).map((q) => ({
       questionId: q.id,
       userResponse: answers[q.id] || '',
     }));
@@ -179,7 +179,7 @@ export const QuizPlayer: React.FC = () => {
               {/* Answers Input depending on type */}
               {currentQ.type === 'mcq' || currentQ.type === 'true_false' ? (
                 <div className="space-y-2.5">
-                  {currentQ.options?.map((option, idx) => {
+                  {(Array.isArray(currentQ.options) ? currentQ.options : []).map((option, idx) => {
                     const isSelected = answers[currentQ.id] === option;
                     return (
                       <button
@@ -242,7 +242,7 @@ export const QuizPlayer: React.FC = () => {
           <h4 className="font-bold text-sm text-slate-900 mb-3.5">Question Navigator</h4>
 
           <div className="grid grid-cols-5 gap-2">
-            {quiz.questions.map((q, idx) => {
+            {(Array.isArray(quiz.questions) ? quiz.questions : []).map((q, idx) => {
               const isAnswered = Boolean(answers[q.id]);
               const isCurrent = currentIndex === idx;
               const isFlagged = flagged[q.id];

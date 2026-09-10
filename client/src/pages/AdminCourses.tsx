@@ -37,8 +37,9 @@ export const AdminCourses: React.FC = () => {
   const fetchCourses = async () => {
     try {
       const res = await API.get('/admin/courses');
-      if (res.data.success) {
-        setCourses(res.data.data || []);
+      if (res.data?.success) {
+        const raw = res.data.data?.courses || res.data.data || [];
+        setCourses(Array.isArray(raw) ? raw : []);
       }
     } catch (e) {
       toast('error', 'Failed to fetch courses');
@@ -140,7 +141,7 @@ export const AdminCourses: React.FC = () => {
             </Card>
           ) : (
             <div className="space-y-6">
-              {courses.map((course) => (
+              {(Array.isArray(courses) ? courses : []).map((course) => (
                 <Card key={course.id} className="p-6 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
                     <div>
@@ -162,18 +163,18 @@ export const AdminCourses: React.FC = () => {
                   {/* Modules List */}
                   <div className="space-y-3">
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Curriculum Modules</h4>
-                    {course.modules?.length === 0 ? (
+                    {!course.modules || course.modules.length === 0 ? (
                       <p className="text-xs text-slate-400 italic">No modules in this course yet.</p>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {course.modules?.map((m) => (
+                        {(Array.isArray(course.modules) ? course.modules : []).map((m) => (
                           <div key={m.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="font-extrabold text-slate-900 text-xs">Module {m.order}: {m.title}</span>
                               <span className="text-[10px] text-slate-400">{m.lessons?.length || 0} lessons</span>
                             </div>
                             <div className="space-y-1">
-                              {m.lessons?.map((les) => (
+                              {(Array.isArray(m.lessons) ? m.lessons : []).map((les) => (
                                 <div key={les.id} className="flex items-center gap-1.5 text-xs text-slate-600">
                                   <BookOpen className="w-3.5 h-3.5 text-slate-400" />
                                   <span className="truncate">{les.title}</span>

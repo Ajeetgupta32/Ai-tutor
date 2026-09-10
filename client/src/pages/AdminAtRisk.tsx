@@ -33,8 +33,9 @@ export const AdminAtRisk: React.FC = () => {
   const fetchAtRiskStudents = async () => {
     try {
       const res = await API.get('/admin/at-risk');
-      if (res.data.success) {
-        setStudents(res.data.data || []);
+      if (res.data?.success) {
+        const raw = res.data.data?.students || res.data.data || [];
+        setStudents(Array.isArray(raw) ? raw : []);
       }
     } catch (e) {
       console.error(e);
@@ -75,10 +76,11 @@ export const AdminAtRisk: React.FC = () => {
     return <Preloader message="Running At-Risk Diagnostic Engine..." subMessage="Scanning student quiz performance, accuracy decay, and inactivity thresholds" />;
   }
 
-  const filtered = students.filter(
+  const studentList = Array.isArray(students) ? students : [];
+  const filtered = studentList.filter(
     (s) =>
-      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.email.toLowerCase().includes(searchTerm.toLowerCase())
+      (s.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (s.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

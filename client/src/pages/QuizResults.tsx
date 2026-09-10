@@ -202,7 +202,7 @@ export const QuizResults: React.FC = () => {
                 Review these concepts with your AI tutor to improve your mastery:
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {attempt.weakTopics.map((wt, idx) => (
+                {(Array.isArray(attempt.weakTopics) ? attempt.weakTopics : []).map((wt, idx) => (
                   <Badge key={idx} variant="danger">
                     {wt}
                   </Badge>
@@ -215,7 +215,7 @@ export const QuizResults: React.FC = () => {
           <div className="space-y-4">
             <h3 className="text-lg font-bold text-slate-900">Question by Question Review</h3>
 
-            {attempt.answers.map((ans, idx) => {
+            {(Array.isArray(attempt.answers) ? attempt.answers : []).map((ans, idx) => {
               const q = quiz.questions?.find((item) => item.id === ans.questionId) || {
                 questionText: `Question ${idx + 1}`,
               };
@@ -352,7 +352,7 @@ export const QuizResults: React.FC = () => {
                         </p>
 
                         <div className="space-y-1.5">
-                          {mistakeData.similarQuestion.options.map((opt, oIdx) => (
+                          {(Array.isArray(mistakeData.similarQuestion.options) ? mistakeData.similarQuestion.options : []).map((opt, oIdx) => (
                             <button
                               key={oIdx}
                               onClick={() => {

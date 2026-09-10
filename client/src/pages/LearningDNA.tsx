@@ -34,12 +34,13 @@ export const LearningDNA: React.FC = () => {
           API.get('/progress/skill-gap'),
         ]);
 
-        if (dnaRes.status === 'fulfilled' && dnaRes.value.data.success) {
-          setDna(dnaRes.value.data.data);
+        if (dnaRes.status === 'fulfilled' && dnaRes.value.data?.success) {
+          setDna(dnaRes.value.data.data || null);
         }
 
-        if (gapsRes.status === 'fulfilled' && gapsRes.value.data.success) {
-          setSkillGaps(gapsRes.value.data.data.skillGaps || []);
+        if (gapsRes.status === 'fulfilled' && gapsRes.value.data?.success) {
+          const raw = gapsRes.value.data.data?.skillGaps || gapsRes.value.data.data || [];
+          setSkillGaps(Array.isArray(raw) ? raw : []);
         }
       } catch (err) {
         console.error(err);
@@ -134,13 +135,13 @@ export const LearningDNA: React.FC = () => {
           </div>
 
           {/* Mastery Dimensions & Radar Breakdown */}
-          {dna?.masteryDimensions && dna.masteryDimensions.length > 0 && (
+          {Array.isArray(dna?.masteryDimensions) && dna.masteryDimensions.length > 0 && (
             <Card className="p-6">
               <h3 className="text-base font-bold text-slate-900 mb-4 pb-3 border-b border-slate-100 flex items-center gap-2">
                 <Brain className="w-5 h-5 text-indigo-600" /> Cognitive Mastery Dimensions
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {dna.masteryDimensions.map((dim, idx) => (
+                {(Array.isArray(dna.masteryDimensions) ? dna.masteryDimensions : []).map((dim, idx) => (
                   <div key={idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-sm text-slate-900">{dim.dimension}</span>
@@ -193,7 +194,7 @@ export const LearningDNA: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {skillGaps.map((gap, idx) => (
+                    {(Array.isArray(skillGaps) ? skillGaps : []).map((gap, idx) => (
                       <tr key={idx} className="hover:bg-slate-50 transition-colors">
                         <td className="py-3.5 pr-3">
                           <span className="font-bold text-slate-900 block">{gap.topic}</span>

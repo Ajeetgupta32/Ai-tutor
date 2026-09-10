@@ -34,8 +34,9 @@ export const AdminSupport: React.FC = () => {
   const fetchTickets = async () => {
     try {
       const res = await API.get('/support/admin/tickets');
-      if (res.data.success) {
-        setTickets(res.data.data || []);
+      if (res.data?.success) {
+        const raw = res.data.data?.tickets || res.data.data || [];
+        setTickets(Array.isArray(raw) ? raw : []);
       }
     } catch (e) {
       toast('error', 'Failed to fetch tickets');
@@ -76,11 +77,12 @@ export const AdminSupport: React.FC = () => {
     return <Preloader message="Loading admin support queue..." subMessage="Fetching open inquiries and SLA metrics" />;
   }
 
-  const filtered = tickets.filter((t) => {
+  const ticketList = Array.isArray(tickets) ? tickets : [];
+  const filtered = ticketList.filter((t) => {
     const matchesSearch =
-      t.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.user?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      (t.subject || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (t.ticketId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (t.description || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
     return matchesSearch && matchesStatus;
   });

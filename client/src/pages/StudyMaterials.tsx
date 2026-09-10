@@ -34,10 +34,12 @@ export const StudyMaterials: React.FC = () => {
   const fetchMaterials = async () => {
     try {
       const res = await API.get('/materials');
-      if (res.data.success) {
-        setMaterials(res.data.data.materials);
-        if (res.data.data.materials.length > 0 && !selectedMaterial) {
-          setSelectedMaterial(res.data.data.materials[0]);
+      if (res.data?.success) {
+        const raw = res.data.data?.materials || res.data.data || res.data.materials || [];
+        const matArray = Array.isArray(raw) ? raw : [];
+        setMaterials(matArray);
+        if (matArray.length > 0 && !selectedMaterial) {
+          setSelectedMaterial(matArray[0]);
         }
       }
     } catch (err) {
@@ -193,7 +195,7 @@ export const StudyMaterials: React.FC = () => {
                 </Card>
               ) : (
                 <div className="space-y-2">
-                  {materials.map((m) => (
+                  {(Array.isArray(materials) ? materials : []).map((m) => (
                     <div
                       key={m._id}
                       onClick={() => setSelectedMaterial(m)}
@@ -253,7 +255,7 @@ export const StudyMaterials: React.FC = () => {
                           Key Topics Extracted
                         </h4>
                         <div className="flex flex-wrap gap-2">
-                          {selectedMaterial.keyTopics.map((kt, idx) => (
+                          {(Array.isArray(selectedMaterial.keyTopics) ? selectedMaterial.keyTopics : []).map((kt, idx) => (
                             <Badge key={idx} variant="primary">
                               {kt}
                             </Badge>

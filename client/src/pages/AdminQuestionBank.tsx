@@ -40,8 +40,9 @@ export const AdminQuestionBank: React.FC = () => {
   const fetchQuestions = async () => {
     try {
       const res = await API.get('/admin/question-bank');
-      if (res.data.success) {
-        setQuestions(res.data.data || []);
+      if (res.data?.success) {
+        const raw = res.data.data?.questions || res.data.data || [];
+        setQuestions(Array.isArray(raw) ? raw : []);
       }
     } catch (e) {
       toast('error', 'Failed to fetch question bank');
@@ -57,7 +58,7 @@ export const AdminQuestionBank: React.FC = () => {
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     try {
       await API.patch(`/admin/question-bank/${id}/status`, { status: newStatus });
-      setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, status: newStatus as any } : q)));
+      setQuestions((prev) => (Array.isArray(prev) ? prev : []).map((q) => (q.id === id ? { ...q, status: newStatus as any } : q)));
       toast('success', `Question ${newStatus}`);
     } catch (e) {
       toast('error', 'Failed to update status');
@@ -98,11 +99,12 @@ export const AdminQuestionBank: React.FC = () => {
     return <Preloader message="Loading question bank..." subMessage="Fetching AI quality control metrics & review queues" />;
   }
 
-  const filtered = questions.filter((q) => {
+  const questionList = Array.isArray(questions) ? questions : [];
+  const filtered = questionList.filter((q) => {
     const matchesSearch =
-      q.questionText.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      q.subjectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      q.topicName.toLowerCase().includes(searchTerm.toLowerCase());
+      (q.questionText || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (q.subjectName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (q.topicName || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || q.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -213,7 +215,7 @@ export const AdminQuestionBank: React.FC = () => {
 
                   {/* Options */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    {q.options?.map((opt, idx) => (
+                    {(Array.isArray(q.options) ? q.options : []).map((opt, idx) => (
                       <div
                         key={idx}
                         className={`p-2.5 rounded-xl border ${

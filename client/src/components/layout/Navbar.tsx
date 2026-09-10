@@ -47,8 +47,9 @@ export const Navbar: React.FC = () => {
     try {
       const res = await api.get('/notifications');
       if (res.data?.success) {
-        setNotifications(res.data.data.notifications || []);
-        setUnreadCount(res.data.data.unreadCount || 0);
+        const raw = res.data.data?.notifications || res.data.data || [];
+        setNotifications(Array.isArray(raw) ? raw : []);
+        setUnreadCount(res.data.data?.unreadCount || 0);
       }
     } catch (e) {
       // Graceful fallback
@@ -59,7 +60,7 @@ export const Navbar: React.FC = () => {
     try {
       await api.post('/notifications/read-all');
       setUnreadCount(0);
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setNotifications((prev) => (Array.isArray(prev) ? prev : []).map((n) => ({ ...n, isRead: true })));
     } catch (e) {
       console.error(e);
     }
@@ -173,7 +174,7 @@ export const Navbar: React.FC = () => {
                         No notifications yet
                       </div>
                     ) : (
-                      notifications.map((n) => (
+                      (Array.isArray(notifications) ? notifications : []).map((n) => (
                         <div
                           key={n.id}
                           className={`p-3 text-xs transition-colors hover:bg-slate-50 ${

@@ -20,8 +20,9 @@ export const AdminAuditLogs: React.FC = () => {
     const fetchLogs = async () => {
       try {
         const res = await API.get('/admin/audit-logs');
-        if (res.data.success) {
-          setLogs(res.data.data || []);
+        if (res.data?.success) {
+          const raw = res.data.data?.logs || res.data.data || [];
+          setLogs(Array.isArray(raw) ? raw : []);
         }
       } catch (e) {
         console.error(e);
@@ -36,11 +37,12 @@ export const AdminAuditLogs: React.FC = () => {
     return <Preloader message="Loading security audit trail..." subMessage="Fetching cryptographic log entries & governance records" />;
   }
 
-  const filtered = logs.filter(
+  const logList = Array.isArray(logs) ? logs : [];
+  const filtered = logList.filter(
     (l) =>
-      l.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      l.actorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      l.targetType.toLowerCase().includes(searchTerm.toLowerCase())
+      (l.action || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (l.actorName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (l.targetType || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

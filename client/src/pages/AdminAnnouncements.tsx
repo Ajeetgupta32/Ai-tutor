@@ -33,8 +33,9 @@ export const AdminAnnouncements: React.FC = () => {
   const fetchAnnouncements = async () => {
     try {
       const res = await API.get('/announcements/all');
-      if (res.data.success) {
-        setAnnouncements(res.data.data || []);
+      if (res.data?.success) {
+        const raw = res.data.data?.announcements || res.data.data || res.data.announcements || [];
+        setAnnouncements(Array.isArray(raw) ? raw : []);
       }
     } catch (e) {
       toast('error', 'Failed to fetch announcements');
@@ -125,7 +126,7 @@ export const AdminAnnouncements: React.FC = () => {
             </Card>
           ) : (
             <div className="space-y-4">
-              {announcements.map((a) => (
+              {(Array.isArray(announcements) ? announcements : []).map((a) => (
                 <Card key={a.id} className="p-6 space-y-3 bg-white">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                     <div>
