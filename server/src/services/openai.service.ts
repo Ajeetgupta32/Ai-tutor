@@ -20,21 +20,35 @@ if (config.openaiApiKey && config.openaiApiKey !== 'your_openai_api_key_here') {
   openaiClient = new OpenAI({ apiKey: config.openaiApiKey });
 }
 
-async function callGeminiCascade(contents: string, config?: any): Promise<string | null> {
+async function callGeminiCascade(contents: string, customConfig?: any): Promise<string | null> {
   if (!geminiClient) return null;
-  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  // Prioritize gemini-2.0-flash for lowest latency & fastest token generation
+  const models = ['gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash', 'gemini-2.5-flash'];
   for (const model of models) {
     try {
-      const response = await geminiClient.models.generateContent({
+      const mergedConfig: any = {
+        // Disable unnecessary thinking tokens for models that support it to eliminate latency
+        ...(model.includes('2.5') ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+        ...(customConfig || {}),
+      };
+
+      // Wrap in a 10-second timeout so slow/lagging endpoints fail-over immediately
+      const generatePromise = geminiClient.models.generateContent({
         model,
         contents,
-        ...(config ? { config } : {}),
+        ...(Object.keys(mergedConfig).length > 0 ? { config: mergedConfig } : {}),
       });
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`Model ${model} request timed out after 10s`)), 10000)
+      );
+
+      const response = await Promise.race([generatePromise, timeoutPromise]);
       if (response && response.text) {
         return response.text;
       }
     } catch (error: any) {
-      logger.warn(`Gemini model ${model} request failed (${error.message || String(error)}), trying fallback model...`);
+      logger.warn(`Gemini model ${model} request failed (${error.message || String(error)}), trying next model...`);
     }
   }
   return null;
