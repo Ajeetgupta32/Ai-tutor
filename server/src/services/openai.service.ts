@@ -20,7 +20,7 @@ if (config.openaiApiKey && config.openaiApiKey !== 'your_openai_api_key_here') {
   openaiClient = new OpenAI({ apiKey: config.openaiApiKey });
 }
 
-async function callGeminiCascade(contents: string, customConfig?: any): Promise<string | null> {
+async function callGeminiCascade(contents: any, customConfig?: any): Promise<string | null> {
   if (!geminiClient) return null;
   // Prioritize gemini-2.0-flash for lowest latency & fastest token generation
   const models = ['gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash', 'gemini-2.5-flash'];
@@ -69,59 +69,75 @@ export class AIService {
     const {
       message,
       conversationHistory = [],
-      subjectName = 'Computer Science',
+      subjectName = 'Computer Science & Tech',
       level = 'intermediate',
       mode = 'default',
       language = 'en',
     } = params;
 
-    const systemPrompt = `You are EduMentor AI, a helpful, brilliant, and friendly AI tutor inspired by the natural clarity and simplicity of Google Gemini and ChatGPT.
+    const systemPrompt = `You are Gemini, a world-class, friendly, and brilliant personal AI tutor for EduMentor.
 
-Your mission:
-- Explain things simply, conversationally, and directly without fluff or repetitive robotic templates.
-- Start with a direct, crystal-clear explanation in the very first 1-2 sentences.
-- Use intuitive, real-world analogies (e.g. Lego bricks, restaurant kitchens, library books) that make complex concepts click immediately.
-- When code or technical examples are helpful, provide a clean, concise snippet (in Python, JavaScript, or C++) with a 1-line explanation of what it does.
-- Avoid repeating the same headers ("Core Conceptual Overview", "Demonstrate Concept") on every message. Treat this like an authentic 1-on-1 chat conversation with a student.
-- Student Level: ${level.toUpperCase()} | Subject: ${subjectName}
-- Language: ${language === 'hi' ? 'Natural conversational Hindi / Hinglish for clarity and ease.' : 'Natural, clear English.'}
-- Mode Guidance: ${
+CORE DIRECTIVE:
+You must directly and accurately answer the EXACT question or topic asked by the student.
+
+Guidelines:
+1. Direct & Simple: Answer the question right away in the first 1-2 sentences with crystal clarity.
+2. Intuitive Examples: Use simple real-world comparisons (e.g., Lego blocks, restaurants, library catalogues) to make the idea click immediately.
+3. Code / Formulas (if applicable): Provide a clean, short, commented snippet in Python/JavaScript/SQL/C++ with a 1-line explanation.
+4. Natural Tone: Speak conversationally, warmly, and clearly like ChatGPT and Gemini. Avoid repetitive boilerplate headers.
+5. Student Profile: Level is ${level.toUpperCase()} in ${subjectName}.
+6. Language: ${language === 'hi' ? 'Natural conversational Hindi / Hinglish for clarity.' : 'Natural English.'}
+7. Response Mode: ${
       mode === 'explain'
-        ? 'Explain clearly in plain everyday language with zero unnecessary jargon.'
+        ? 'Explain the topic simply with clear language and no unnecessary jargon.'
         : (mode as string) === 'eli10'
-        ? 'Explain Like I\'m 10: Use an ultra-simple, fun, easy analogy that a 10-year-old would instantly understand and love.'
+        ? 'Explain Like I\'m 10: Use an ultra-simple, fun, easy analogy that a 10-year-old would immediately understand.'
         : mode === 'analogy'
-        ? 'Give an intuitive, real-world comparison that makes the topic effortless to visualize.'
+        ? 'Use an intuitive, creative real-world analogy to illustrate the concept.'
         : mode === 'stepByStep'
-        ? 'Provide a clear, practical numbered breakdown.'
+        ? 'Provide a clear, numbered step-by-step breakdown.'
         : mode === 'summarize'
-        ? 'Give 3-4 high-impact key takeaways.'
+        ? 'Provide a crisp 3-4 bullet point summary with key takeaways.'
         : mode === 'quizMe'
         ? 'Briefly recap the core point and ask 2 fun, interactive check-for-understanding questions.'
         : (mode as string) === 'examPrep'
-        ? 'Highlight exam high-yield facts, common student traps, and a fast memory trick.'
-        : 'Give a direct, simple, and friendly explanation with a quick practical example.'
+        ? 'Provide exam-oriented high-yield points, common exam traps, and a fast memory trick.'
+        : 'Provide a direct, engaging, and simple explanation tailored specifically to the user\'s question.'
     }`;
 
-    // 1. Try Google Gemini API Cascade
-    const historyText = conversationHistory
-      .slice(-6)
-      .map((h) => `${h.sender === 'user' ? 'Student' : 'Tutor'}: ${h.content}`)
-      .join('\n');
+    // Filter out current message from history to prevent duplicate prompt tokens
+    const priorHistory = conversationHistory
+      .filter((h) => !(h.sender === 'user' && h.content === message))
+      .slice(-6);
 
-    const fullPrompt = `${systemPrompt}\n\nConversation History:\n${historyText}\n\nStudent: ${message}\n\nTutor:`;
-    const geminiReply = await callGeminiCascade(fullPrompt, { temperature: 0.75 });
+    // 1. Build Multi-Turn Contents for Google Gemini API Cascade
+    const geminiContents: any[] = [];
+    for (const h of priorHistory) {
+      geminiContents.push({
+        role: h.sender === 'user' ? 'user' : 'model',
+        parts: [{ text: h.content }],
+      });
+    }
+    geminiContents.push({
+      role: 'user',
+      parts: [{ text: message }],
+    });
+
+    const geminiReply = await callGeminiCascade(geminiContents, {
+      systemInstruction: systemPrompt,
+      temperature: 0.7,
+    });
+
     if (geminiReply && geminiReply.trim()) {
       return geminiReply.trim();
     }
-
 
     // 2. Try OpenAI API if available
     if (openaiClient) {
       try {
         const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
           { role: 'system', content: systemPrompt },
-          ...conversationHistory.slice(-6).map((h) => ({
+          ...priorHistory.map((h) => ({
             role: (h.sender === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
             content: h.content,
           })),
@@ -131,7 +147,7 @@ Your mission:
         const response = await openaiClient.chat.completions.create({
           model: 'gpt-4o-mini',
           messages,
-          temperature: 0.75,
+          temperature: 0.7,
         });
 
         const reply = response.choices[0]?.message?.content;

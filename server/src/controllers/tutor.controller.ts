@@ -170,9 +170,9 @@ export const sendMessage = asyncHandler(async (req: Request, res: Response) => {
     },
   });
 
-  // Get previous history
+  // Get previous history (excluding current user message)
   const previousMessages = await prisma.message.findMany({
-    where: { conversationId: id },
+    where: { conversationId: id, id: { not: userMsg.id } },
     orderBy: { createdAt: 'asc' },
   });
 
