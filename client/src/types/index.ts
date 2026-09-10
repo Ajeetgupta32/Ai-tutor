@@ -270,11 +270,19 @@ export interface RoadmapNode {
 
 export interface Course {
   id: string;
+  _id?: string;
   title: string;
   description: string;
   subjectName: string;
   difficulty: string;
   isPublished: boolean;
+  xpReward?: number;
+  hasCertificate?: boolean;
+  certificateTitle?: string;
+  moduleCount?: number;
+  lessonCount?: number;
+  totalDurationMinutes?: number;
+  createdAt?: string;
   modules?: Array<{
     id: string;
     title: string;
@@ -286,9 +294,74 @@ export interface Course {
       content: string;
       durationMinutes: number;
       order: number;
-      isCompleted: boolean;
+      isCompleted?: boolean;
     }>;
   }>;
+  enrollment?: {
+    isEnrolled: boolean;
+    progressPercent: number;
+    completedLessons: string[];
+    isCompleted: boolean;
+    completedAt?: string;
+    certificateId?: string;
+    xpAwarded?: number;
+  };
+  enrollments?: Array<{
+    id: string;
+    userId: string;
+    progressPercent: number;
+    isCompleted: boolean;
+    user?: {
+      id: string;
+      name: string;
+      email: string;
+      avatar?: string;
+    };
+  }>;
+  _count?: {
+    enrollments?: number;
+    certificates?: number;
+  };
+}
+
+export interface CourseEnrollment {
+  id: string;
+  userId: string;
+  courseId: string;
+  progressPercent: number;
+  completedLessons: string[];
+  isCompleted: boolean;
+  completedAt?: string;
+  certificateId?: string;
+  xpAwarded: number;
+  enrolledAt: string;
+}
+
+export interface CourseStudentItem {
+  enrollmentId: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+    level?: string;
+    xp?: number;
+    riskLevel?: string;
+    studyStreak?: number;
+  };
+  progressPercent: number;
+  completedLessonsCount: number;
+  totalLessons: number;
+  isCompleted: boolean;
+  completedAt?: string;
+  enrolledAt: string;
+  xpAwarded: number;
+  certificate?: {
+    id: string;
+    certificateId: string;
+    verificationCode: string;
+    issuedAt: string;
+  } | null;
 }
 
 export interface QuestionBankItem {

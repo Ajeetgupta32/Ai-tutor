@@ -32,6 +32,7 @@ export const Sidebar: React.FC = () => {
 
   const studentNavItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'Academy Courses', path: '/courses', icon: Layers, badge: 'XP & Certs' },
     { label: 'AI Tutor Chat', path: '/tutor', icon: MessageSquare, badge: 'Voice/ELI10' },
     { label: 'Learning DNA & Gaps', path: '/dna', icon: Dna },
     { label: 'Adaptive Roadmap', path: '/roadmap', icon: Map },

@@ -12,6 +12,9 @@ import {
   updateQuestionStatus,
   getCourses,
   createCourse,
+  updateCourse,
+  deleteCourse,
+  getCourseStudents,
   createCourseModule,
   createCourseLesson,
   getAiAnalytics,
@@ -48,6 +51,9 @@ router.patch('/question-bank/:id/status', updateQuestionStatus);
 // Course Management
 router.get('/courses', getCourses);
 router.post('/courses', createCourse);
+router.put('/courses/:id', updateCourse);
+router.delete('/courses/:id', deleteCourse);
+router.get('/courses/:courseId/students', getCourseStudents);
 router.post('/courses/:courseId/modules', createCourseModule);
 router.post('/modules/:moduleId/lessons', createCourseLesson);
 

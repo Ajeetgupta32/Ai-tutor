@@ -13,6 +13,7 @@ import certificateRoutes from './certificate.routes.js';
 import notificationRoutes from './notification.routes.js';
 import supportRoutes from './support.routes.js';
 import announcementRoutes from './announcement.routes.js';
+import courseRoutes from './course.routes.js';
 
 const router = Router();
 
@@ -23,6 +24,7 @@ router.use('/quiz-attempts', attemptRoutes);
 router.use('/progress', progressRoutes);
 router.use('/materials', materialRoutes);
 router.use('/subjects', subjectRoutes);
+router.use('/courses', courseRoutes);
 router.use('/admin', adminRoutes);
 router.use('/goals', goalRoutes);
 router.use('/study-plans', studyPlanRoutes);

@@ -440,9 +440,21 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
     include: {
       modules: {
         include: {
-          lessons: true,
+          lessons: {
+            orderBy: { order: 'asc' },
+          },
         },
         orderBy: { order: 'asc' },
+      },
+      enrollments: {
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, avatar: true },
+          },
+        },
+      },
+      _count: {
+        select: { enrollments: true, certificates: true },
       },
     },
     orderBy: { createdAt: 'desc' },
@@ -455,7 +467,16 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const createCourse = asyncHandler(async (req: Request, res: Response) => {
-  const { title, description, subjectName, difficulty, isPublished } = req.body;
+  const {
+    title,
+    description,
+    subjectName,
+    difficulty,
+    isPublished,
+    xpReward,
+    hasCertificate,
+    certificateTitle,
+  } = req.body;
 
   if (!title || !subjectName) {
     throw new AppError('Title and subjectName are required', 400);
@@ -468,6 +489,9 @@ export const createCourse = asyncHandler(async (req: Request, res: Response) => 
       subjectName,
       difficulty: difficulty || 'intermediate',
       isPublished: isPublished ?? true,
+      xpReward: xpReward ? Number(xpReward) : 250,
+      hasCertificate: hasCertificate ?? true,
+      certificateTitle: certificateTitle || `Certificate of Mastery: ${title}`,
       createdBy: req.user?.userId || null,
     },
   });
@@ -475,7 +499,135 @@ export const createCourse = asyncHandler(async (req: Request, res: Response) => 
   res.status(201).json({
     success: true,
     data: course,
-    message: 'Course created successfully',
+    message: 'Course created and published with XP and Certificate settings',
+  });
+});
+
+export const updateCourse = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const {
+    title,
+    description,
+    subjectName,
+    difficulty,
+    isPublished,
+    xpReward,
+    hasCertificate,
+    certificateTitle,
+  } = req.body;
+
+  const dataToUpdate: any = {};
+  if (title !== undefined) dataToUpdate.title = title;
+  if (description !== undefined) dataToUpdate.description = description;
+  if (subjectName !== undefined) dataToUpdate.subjectName = subjectName;
+  if (difficulty !== undefined) dataToUpdate.difficulty = difficulty;
+  if (isPublished !== undefined) dataToUpdate.isPublished = Boolean(isPublished);
+  if (xpReward !== undefined) dataToUpdate.xpReward = Number(xpReward);
+  if (hasCertificate !== undefined) dataToUpdate.hasCertificate = Boolean(hasCertificate);
+  if (certificateTitle !== undefined) dataToUpdate.certificateTitle = certificateTitle;
+
+  const updated = await prisma.course.update({
+    where: { id },
+    data: dataToUpdate,
+  });
+
+  res.status(200).json({
+    success: true,
+    data: updated,
+    message: 'Course updated successfully',
+  });
+});
+
+export const deleteCourse = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  await prisma.course.delete({
+    where: { id },
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Course deleted successfully',
+  });
+});
+
+export const getCourseStudents = asyncHandler(async (req: Request, res: Response) => {
+  const { courseId } = req.params;
+
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    include: {
+      modules: {
+        include: { lessons: true },
+      },
+    },
+  });
+
+  if (!course) {
+    throw new AppError('Course not found', 404);
+  }
+
+  let totalLessons = 0;
+  course.modules.forEach((m) => {
+    totalLessons += m.lessons.length;
+  });
+
+  const enrollments = await prisma.courseEnrollment.findMany({
+    where: { courseId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatar: true,
+          level: true,
+          xp: true,
+          riskLevel: true,
+          studyStreak: true,
+        },
+      },
+    },
+    orderBy: { enrolledAt: 'desc' },
+  });
+
+  // Fetch any issued certificates for this course
+  const certificates = await prisma.certificate.findMany({
+    where: { courseId },
+  });
+  const certMap: Record<string, any> = {};
+  certificates.forEach((c) => {
+    certMap[c.userId] = c;
+  });
+
+  const studentData = enrollments.map((e) => ({
+    enrollmentId: e.id,
+    user: e.user,
+    progressPercent: e.progressPercent,
+    completedLessonsCount: e.completedLessons.length,
+    totalLessons,
+    isCompleted: e.isCompleted,
+    completedAt: e.completedAt,
+    enrolledAt: e.enrolledAt,
+    xpAwarded: e.xpAwarded,
+    certificate: certMap[e.userId] || null,
+  }));
+
+  res.status(200).json({
+    success: true,
+    data: {
+      course: {
+        id: course.id,
+        title: course.title,
+        subjectName: course.subjectName,
+        xpReward: course.xpReward,
+        hasCertificate: course.hasCertificate,
+        totalLessons,
+      },
+      students: studentData,
+      totalEnrolled: enrollments.length,
+      totalCompleted: enrollments.filter((e) => e.isCompleted).length,
+    },
   });
 });
 

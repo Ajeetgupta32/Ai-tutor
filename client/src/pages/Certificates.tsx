@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button.js';
 import { Badge } from '../components/ui/Badge.js';
 import { Preloader } from '../components/ui/Preloader.js';
 import { useToast } from '../context/ToastContext.js';
+import { useAuth } from '../context/AuthContext.js';
 import {
   Award,
   ShieldCheck,
@@ -21,6 +22,7 @@ import { Certificate } from '../types/index.js';
 
 export const Certificates: React.FC = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -213,7 +215,7 @@ export const Certificates: React.FC = () => {
 
                   <p className="text-xs text-slate-500">This officially certifies that</p>
                   <h3 className="text-2xl font-black text-slate-900 border-b-2 border-slate-300 pb-2 max-w-md mx-auto">
-                    {activeCert.user?.name || 'EduMentor Scholar'}
+                    {activeCert.user?.name || user?.name || 'EduMentor Scholar'}
                   </h3>
 
                   <p className="text-xs text-slate-600 max-w-lg mx-auto leading-relaxed">

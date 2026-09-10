@@ -44,6 +44,7 @@ model User {
   notifications         Notification[]
   auditLogs             AuditLog[]
   roadmaps              LearningRoadmap[]
+  courseEnrollments     CourseEnrollment[]
 
   @@map("users")
 }
@@ -301,6 +302,7 @@ model Certificate {
   id               String   @id @default(cuid())
   certificateId    String   @unique
   userId           String
+  courseId         String?
   title            String
   subjectName      String
   score            Float
@@ -308,27 +310,56 @@ model Certificate {
   verificationCode String   @unique
 
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course           Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([courseId])
   @@map("certificates")
 }
 
 model Course {
-  id          String         @id @default(cuid())
-  title       String
-  description String         @db.Text
-  subjectId   String?
-  subjectName String
-  difficulty  String         @default("intermediate")
-  isPublished Boolean        @default(true)
-  createdBy   String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id               String            @id @default(cuid())
+  title            String
+  description      String            @db.Text
+  subjectId        String?
+  subjectName      String
+  difficulty       String            @default("intermediate")
+  isPublished      Boolean           @default(true)
+  xpReward         Int               @default(250)
+  hasCertificate   Boolean           @default(true)
+  certificateTitle String?
+  createdBy        String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
-  subject     Subject?       @relation(fields: [subjectId], references: [id], onDelete: SetNull)
-  modules     CourseModule[]
+  subject          Subject?          @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  modules          CourseModule[]
+  enrollments      CourseEnrollment[]
+  certificates     Certificate[]
 
   @@map("courses")
+}
+
+model CourseEnrollment {
+  id               String    @id @default(cuid())
+  userId           String
+  courseId         String
+  progressPercent  Float     @default(0)
+  completedLessons String[]  @default([])
+  isCompleted      Boolean   @default(false)
+  completedAt      DateTime?
+  certificateId    String?
+  xpAwarded        Int       @default(0)
+  enrolledAt       DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course           Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@map("course_enrollments")
 }
 
 model CourseModule {

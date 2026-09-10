@@ -23,6 +23,8 @@ import { StudyPlanner } from './pages/StudyPlanner.js';
 import { Goals } from './pages/Goals.js';
 import { Certificates } from './pages/Certificates.js';
 import { Support } from './pages/Support.js';
+import { Courses } from './pages/Courses.js';
+import { CoursePlayer } from './pages/CoursePlayer.js';
 
 // Admin Pages
 import { AdminDashboard } from './pages/AdminDashboard.js';
@@ -50,6 +52,22 @@ export const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/courses"
+            element={
+              <ProtectedRoute>
+                <Courses />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/courses/:courseId"
+            element={
+              <ProtectedRoute>
+                <CoursePlayer />
               </ProtectedRoute>
             }
           />
