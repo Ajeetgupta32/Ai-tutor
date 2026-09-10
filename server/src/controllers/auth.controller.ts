@@ -1,9 +1,13 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { AppError } from '../utils/appError.js';
 
 export const sendOtp = asyncHandler(async (req: Request, res: Response) => {
   const { email, purpose } = req.body;
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    throw new AppError('A valid email address is required.', 400);
+  }
   const result = await AuthService.sendOtp(email, purpose);
 
   res.status(200).json({
@@ -15,6 +19,9 @@ export const sendOtp = asyncHandler(async (req: Request, res: Response) => {
 
 export const verifyOtp = asyncHandler(async (req: Request, res: Response) => {
   const { email, otp, purpose } = req.body;
+  if (!email || !otp) {
+    throw new AppError('Email and 6-digit OTP code are required.', 400);
+  }
   await AuthService.verifyOtp(email, otp, purpose);
 
   res.status(200).json({
@@ -24,6 +31,10 @@ export const verifyOtp = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const registerWithOtp = asyncHandler(async (req: Request, res: Response) => {
+  const { name, email, password, otp } = req.body;
+  if (!name || !email || !password || !otp) {
+    throw new AppError('Name, email, password, and 6-digit OTP are required.', 400);
+  }
   const { user, token } = await AuthService.registerWithOtp(req.body);
 
   res.cookie('token', token, {
