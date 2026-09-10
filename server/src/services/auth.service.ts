@@ -119,10 +119,32 @@ export class AuthService {
 
     await this.verifyOtp(data.email, data.otp, 'registration');
 
-    const emailLower = data.email.toLowerCase();
+    const emailLower = data.email.toLowerCase().trim();
     const existing = await prisma.user.findUnique({ where: { email: emailLower } });
     if (existing) {
-      throw new AppError('User with this email already exists', 400);
+      if (existing.isEmailVerified) {
+        throw new AppError('An account with this email already exists. Please sign in.', 400);
+      }
+      
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash(data.password, salt);
+      const user = await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          name: data.name,
+          passwordHash,
+          role: data.role || existing.role || 'student',
+          isEmailVerified: true,
+        },
+      });
+
+      const token = generateToken({
+        userId: user.id,
+        role: user.role as 'student' | 'admin',
+        email: user.email,
+      });
+
+      return { user: this.sanitizeUser(user), token };
     }
 
     const salt = await bcrypt.genSalt(10);
