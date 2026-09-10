@@ -5,7 +5,7 @@ import { useToast } from '../context/ToastContext.js';
 import { Button } from '../components/ui/Button.js';
 import { Input } from '../components/ui/Input.js';
 import { Card } from '../components/ui/Card.js';
-import { GraduationCap, UserCheck, ShieldCheck, UserPlus } from 'lucide-react';
+import { GraduationCap, UserPlus } from 'lucide-react';
 
 export const Register: React.FC = () => {
   const { register } = useAuth();
@@ -15,7 +15,6 @@ export const Register: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'student' | 'admin'>('student');
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -31,17 +30,13 @@ export const Register: React.FC = () => {
 
     setLoading(true);
     try {
-      const newUser = await register(name.trim(), email.trim().toLowerCase(), password, role);
+      const newUser = await register(name.trim(), email.trim().toLowerCase(), password, 'student');
       toast(
         'success',
         'Account Created Successfully!',
         `Welcome to EduMentor AI, ${newUser.name.split(' ')[0]}!`
       );
-      if (newUser.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
+      navigate('/dashboard');
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || 'Could not create account';
       toast('error', 'Registration Error', msg);
@@ -96,35 +91,6 @@ export const Register: React.FC = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-
-          {/* Role selector */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Account Role</label>
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => setRole('student')}
-                className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition-all ${
-                  role === 'student'
-                    ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-xs'
-                    : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <UserCheck className="w-4 h-4" /> Student
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole('admin')}
-                className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition-all ${
-                  role === 'admin'
-                    ? 'bg-amber-50 border-amber-500 text-amber-800 shadow-xs'
-                    : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <ShieldCheck className="w-4 h-4" /> Admin
-              </button>
-            </div>
-          </div>
 
           <Button type="submit" className="w-full mt-2" isLoading={loading}>
             <UserPlus className="w-4 h-4 mr-1.5" /> Create Account & Sign In

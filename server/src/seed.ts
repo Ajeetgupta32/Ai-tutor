@@ -4,37 +4,66 @@ import bcrypt from 'bcryptjs';
 async function main() {
   console.log('🌱 Seeding PostgreSQL database for EduMentor AI...');
 
-  // 1. Seed Default Users
+  // 1. Seed & Enforce Single Admin (harshita123@gmail.com)
   const salt = await bcrypt.genSalt(10);
+  const adminPassword = await bcrypt.hash('harshita123', salt);
   const studentPassword = await bcrypt.hash('student123', salt);
-  const adminPassword = await bcrypt.hash('admin123', salt);
 
-  const defaultUsers = [
-    {
+  const adminEmail = 'harshita123@gmail.com';
+
+  // Demote any other admins to student so only one admin exists
+  const demoteResult = await prisma.user.updateMany({
+    where: {
+      role: 'admin',
+      email: { not: adminEmail },
+    },
+    data: {
+      role: 'student',
+    },
+  });
+  if (demoteResult.count > 0) {
+    console.log(`ℹ️ Demoted ${demoteResult.count} other admin account(s) to 'student'.`);
+  }
+
+  // Upsert the single official Admin
+  const adminUser = await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {
+      name: 'Harshita',
+      passwordHash: adminPassword,
+      role: 'admin',
+      isEmailVerified: true,
+      status: 'active',
+    },
+    create: {
+      name: 'Harshita',
+      email: adminEmail,
+      passwordHash: adminPassword,
+      role: 'admin',
+      isEmailVerified: true,
+      status: 'active',
+      level: 'advanced',
+    },
+  });
+  console.log(`👑 Configured sole Admin: ${adminUser.email} (Password: harshita123)`);
+
+  // Ensure default demo student exists
+  const demoStudent = await prisma.user.upsert({
+    where: { email: 'student@edumentor.ai' },
+    update: {
+      role: 'student',
+      isEmailVerified: true,
+    },
+    create: {
       name: 'Alex Student',
       email: 'student@edumentor.ai',
       passwordHash: studentPassword,
       role: 'student',
       level: 'intermediate',
+      isEmailVerified: true,
     },
-    {
-      name: 'Dr. Sarah Admin',
-      email: 'admin@edumentor.ai',
-      passwordHash: adminPassword,
-      role: 'admin',
-      level: 'advanced',
-    },
-  ];
-
-  for (const u of defaultUsers) {
-    const existing = await prisma.user.findUnique({ where: { email: u.email } });
-    if (!existing) {
-      const user = await prisma.user.create({ data: u });
-      console.log(`👤 Created ${u.role} user: ${user.email} (Password: ${u.role}123)`);
-    } else {
-      console.log(`ℹ️ User already exists: ${existing.email}`);
-    }
-  }
+  });
+  console.log(`👤 Configured Student: ${demoStudent.email}`);
 
   // 2. Seed Default Subjects & Topics
   const defaultSubjects = [

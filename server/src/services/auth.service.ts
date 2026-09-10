@@ -160,7 +160,7 @@ export class AuthService {
         name: data.name,
         email: emailLower,
         passwordHash,
-        role: data.role || 'student',
+        role: 'student',
         isEmailVerified: true,
       },
     });
@@ -268,7 +268,7 @@ export class AuthService {
         name: data.name,
         email: emailLower,
         passwordHash,
-        role: data.role || 'student',
+        role: 'student', // All public registrations are student role only
         isEmailVerified: true,
       },
     });
