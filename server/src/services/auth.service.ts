@@ -35,7 +35,7 @@ export class AuthService {
 
     // Generate secure 6-digit numeric OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes validity
 
     await prisma.otpVerification.create({
       data: {
@@ -59,7 +59,7 @@ export class AuthService {
     console.log(`👤 Recipient: ${emailLower}`);
     console.log(`🔐 Purpose:   ${purpose.toUpperCase()}`);
     console.log(`🔑 OTP Code:  ${otp}`);
-    console.log(`⏱️  Valid for: 10 minutes (expires ${expiresAt.toLocaleTimeString()})`);
+    console.log(`⏱️  Valid for: 15 minutes (expires ${expiresAt.toLocaleTimeString()})`);
     console.log(`======================================================\n`);
 
     return {
@@ -73,25 +73,28 @@ export class AuthService {
    */
   static async verifyOtp(email: string, otp: string, purpose: string = 'registration') {
     const emailLower = email.trim().toLowerCase();
-    const cleanOtp = otp.trim();
+    const cleanOtp = String(otp || '').trim().replace(/\D/g, '');
 
-    const allowedPurposes = purpose === 'registration' || purpose === 'account_verification'
-      ? ['registration', 'account_verification']
-      : [purpose];
+    if (!cleanOtp || cleanOtp.length !== 6) {
+      throw new AppError('Please enter a valid 6-digit verification code.', 400);
+    }
 
+    // Find the latest unused OTP record for this email
     const record = await prisma.otpVerification.findFirst({
       where: {
         email: emailLower,
         otp: cleanOtp,
-        purpose: { in: allowedPurposes },
         isUsed: false,
-        expiresAt: { gt: new Date() },
       },
       orderBy: { createdAt: 'desc' },
     });
 
     if (!record) {
-      throw new AppError('Invalid or expired OTP code. Please request a new code.', 400);
+      throw new AppError('Invalid OTP code. Please enter the 6-digit code received in your email.', 400);
+    }
+
+    if (new Date() > new Date(record.expiresAt)) {
+      throw new AppError('This verification code has expired. Please click "Resend Code" to receive a new code.', 400);
     }
 
     // Mark OTP as used

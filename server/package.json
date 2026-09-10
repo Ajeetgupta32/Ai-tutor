@@ -2,6 +2,7 @@
   "name": "edumentor-ai-server",
   "version": "1.0.0",
   "description": "Production Quality AI Tutor & Quiz Generator Backend",
+  "license": "MIT",
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
