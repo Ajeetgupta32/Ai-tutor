@@ -47,11 +47,13 @@ export class AuthService {
       },
     });
 
-    // Send email via Nodemailer
-    await EmailService.sendOtpEmail({
+    // Dispatch email asynchronously so the UI transitions instantly (<100ms)
+    EmailService.sendOtpEmail({
       to: emailLower,
       otp,
       purpose,
+    }).catch((err) => {
+      console.error('Background OTP email dispatch error:', err);
     });
 
     console.log(`\n======================================================`);

@@ -12,15 +12,21 @@ function getTransporter(): Transporter {
         host: config.smtpHost,
         port: config.smtpPort,
         secure: config.smtpPort === 465,
+        pool: true,
+        maxConnections: 5,
+        maxMessages: 100,
         auth: {
           user: config.smtpUser,
           pass: config.smtpPass,
         },
       });
     } else if (config.smtpUser && config.smtpPass) {
-      // Direct Gmail service
+      // Direct Gmail service with pooling
       transporter = nodemailer.createTransport({
         service: 'gmail',
+        pool: true,
+        maxConnections: 5,
+        maxMessages: 100,
         auth: {
           user: config.smtpUser,
           pass: config.smtpPass,
