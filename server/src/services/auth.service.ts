@@ -242,7 +242,7 @@ export class AuthService {
         email: emailLower,
         passwordHash,
         role: data.role || 'student',
-        isEmailVerified: false,
+        isEmailVerified: true,
       },
     });
 
