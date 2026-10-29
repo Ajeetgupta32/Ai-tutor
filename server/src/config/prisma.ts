@@ -8,8 +8,19 @@ import path from 'path';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-const connectionString = (process.env.DATABASE_URL || '').replace(/"/g, '').trim();
-const pool = new pg.Pool({ connectionString });
+const rawConnectionString = (process.env.DATABASE_URL || '').replace(/"/g, '').trim();
+// Strip incompatible parameters for node-postgres and enforce SSL
+const connectionString = rawConnectionString
+  .replace(/[\?&]channel_binding=[^&]+/, '')
+  .replace(/sslmode=verify-full/, 'sslmode=require');
+
+const pool = new pg.Pool({
+  connectionString,
+  ssl: { rejectUnauthorized: false },
+  max: 20,
+  idleTimeoutMillis: 60000,
+  connectionTimeoutMillis: 30000,
+});
 const urlSchemaMatch = connectionString.match(/schema=([^&]+)/);
 const schema = urlSchemaMatch ? urlSchemaMatch[1] : 'public';
 const adapter = new PrismaPg(pool, { schema });
