@@ -59,12 +59,12 @@ export const AdminAISettings: React.FC = () => {
                 </h1>
               </div>
               <p className="text-sm text-slate-600">
-                Monitor Google Gemini 2.5 Flash token utilization, AI model parameters, and safety moderation filters.
+                Monitor IBM Granite 4.2 30B & Gemini token utilization, AI model parameters, and safety moderation filters.
               </p>
             </div>
 
             <Badge variant="success" className="px-3 py-1.5 text-xs font-bold">
-              <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Gemini 2.5 Flash Active
+              <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> {aiData?.modelConfig?.activeModel || 'ibm-granite/granite-4.2-30b'} Active
             </Badge>
           </div>
 
@@ -80,10 +80,10 @@ export const AdminAISettings: React.FC = () => {
 
             <Card className="p-5 space-y-2">
               <span className="text-xs text-slate-400 font-bold uppercase">Active Foundation Model</span>
-              <div className="text-2xl font-black text-slate-900">
-                {aiData?.modelConfig?.activeModel || 'gemini-2.5-flash'}
+              <div className="text-lg font-black text-slate-900 break-all">
+                {aiData?.modelConfig?.activeModel || 'ibm-granite/granite-4.2-30b'}
               </div>
-              <p className="text-xs text-slate-500">Fast reasoning & multi-modal tutor support</p>
+              <p className="text-xs text-slate-500">IBM Granite 4.2 30B with Gemini Cascade</p>
             </Card>
 
             <Card className="p-5 space-y-2">

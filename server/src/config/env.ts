@@ -13,6 +13,10 @@ export const config = {
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   openaiApiKey: process.env.OPENAI_API_KEY || '',
   geminiApiKey: process.env.GEMINI_API_KEY || '',
+  graniteApiKey: process.env.GRANITE_API_KEY || process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY || process.env.WATSONX_APIKEY || process.env.OPENROUTER_API_KEY || '',
+  graniteBaseUrl: process.env.GRANITE_BASE_URL || process.env.HF_BASE_URL || 'https://router.huggingface.co/hf-inference/v1',
+  graniteModel: process.env.GRANITE_MODEL || 'ibm-granite/granite-4.2-30b',
+  aiProvider: process.env.AI_PROVIDER || 'granite', // 'granite' | 'gemini' | 'openai'
   smtpHost: process.env.SMTP_HOST || '',
   smtpPort: parseInt(process.env.SMTP_PORT || '587', 10),
   smtpUser: process.env.SMTP_USER || '',

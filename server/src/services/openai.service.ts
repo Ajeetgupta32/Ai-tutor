@@ -11,6 +11,14 @@ import {
 
 let geminiClient: GoogleGenAI | null = null;
 let openaiClient: OpenAI | null = null;
+let graniteClient: OpenAI | null = null;
+
+if (config.graniteApiKey && config.graniteApiKey.trim() !== '') {
+  graniteClient = new OpenAI({
+    apiKey: config.graniteApiKey,
+    baseURL: config.graniteBaseUrl || 'https://router.huggingface.co/hf-inference/v1',
+  });
+}
 
 if (config.geminiApiKey && config.geminiApiKey.trim() !== '') {
   geminiClient = new GoogleGenAI({ apiKey: config.geminiApiKey });
@@ -18,6 +26,34 @@ if (config.geminiApiKey && config.geminiApiKey.trim() !== '') {
 
 if (config.openaiApiKey && config.openaiApiKey !== 'your_openai_api_key_here') {
   openaiClient = new OpenAI({ apiKey: config.openaiApiKey });
+}
+
+async function callGraniteCascade(
+  messages: OpenAI.Chat.ChatCompletionMessageParam[],
+  options?: { temperature?: number; response_format?: any }
+): Promise<string | null> {
+  if (!graniteClient) return null;
+  try {
+    const callPromise = graniteClient.chat.completions.create({
+      model: config.graniteModel || 'ibm-granite/granite-4.2-30b',
+      messages,
+      temperature: options?.temperature ?? 0.7,
+      ...(options?.response_format ? { response_format: options.response_format } : {}),
+    });
+
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Granite model ${config.graniteModel} timed out after 12s`)), 12000)
+    );
+
+    const response = await Promise.race([callPromise, timeoutPromise]);
+    const reply = response.choices[0]?.message?.content;
+    if (reply && reply.trim()) {
+      return reply.trim();
+    }
+  } catch (error: any) {
+    logger.warn(`Granite model request failed (${error.message || String(error)}), cascading to Gemini/OpenAI...`);
+  }
+  return null;
 }
 
 async function callGeminiCascade(contents: any, customConfig?: any): Promise<string | null> {
@@ -110,7 +146,27 @@ Guidelines:
       .filter((h) => !(h.sender === 'user' && h.content === message))
       .slice(-6);
 
-    // 1. Build Multi-Turn Contents for Google Gemini API Cascade
+    // 1. Try IBM Granite (ibm-granite/granite-4.2-30b) if configured
+    if (graniteClient) {
+      try {
+        const graniteMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+          { role: 'system', content: systemPrompt },
+          ...priorHistory.map((h) => ({
+            role: (h.sender === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+            content: h.content,
+          })),
+          { role: 'user', content: message },
+        ];
+        const graniteReply = await callGraniteCascade(graniteMessages, { temperature: 0.7 });
+        if (graniteReply && graniteReply.trim()) {
+          return graniteReply.trim();
+        }
+      } catch (err: any) {
+        logger.warn(`Granite Tutor Error: ${err.message || String(err)}`);
+      }
+    }
+
+    // 2. Build Multi-Turn Contents for Google Gemini API Cascade
     const geminiContents: any[] = [];
     for (const h of priorHistory) {
       geminiContents.push({
@@ -132,7 +188,7 @@ Guidelines:
       return geminiReply.trim();
     }
 
-    // 2. Try OpenAI API if available
+    // 3. Try OpenAI API if available
     if (openaiClient) {
       try {
         const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
@@ -207,7 +263,25 @@ Required JSON Structure (output ONLY the JSON object with no markdown wrappers):
   ]
 }`;
 
-    // 1. Try Google Gemini API Cascade
+    // 1. Try IBM Granite if configured
+    if (graniteClient) {
+      try {
+        const rawGranite = await callGraniteCascade([
+          { role: 'system', content: 'You are an expert AI Assessment Engine. Respond strictly with JSON matching the user prompt structure.' },
+          { role: 'user', content: prompt },
+        ], { response_format: { type: 'json_object' } });
+        if (rawGranite) {
+          const cleaned = rawGranite.replace(/^```json\s*/, '').replace(/```$/, '').trim();
+          const parsed = JSON.parse(cleaned);
+          const validated = QuizGenerationZodSchema.parse(parsed);
+          return validated;
+        }
+      } catch (err: any) {
+        logger.warn(`Failed to parse/validate Granite quiz JSON: ${err.message || String(err)}`);
+      }
+    }
+
+    // 2. Try Google Gemini API Cascade
     const rawJson = await callGeminiCascade(prompt, { responseMimeType: 'application/json' });
     if (rawJson) {
       try {
@@ -221,7 +295,7 @@ Required JSON Structure (output ONLY the JSON object with no markdown wrappers):
     }
 
 
-    // 2. Try OpenAI API if available
+    // 3. Try OpenAI API if available
     if (openaiClient) {
       try {
         const response = await openaiClient.chat.completions.create({
@@ -272,7 +346,24 @@ Required JSON Structure (output ONLY the JSON object with no markdown wrappers):
 Text:
 ${text.slice(0, 8000)}`;
 
-    // 1. Try Google Gemini API Cascade
+    // 1. Try IBM Granite if configured
+    if (graniteClient) {
+      try {
+        const rawText = await callGraniteCascade([
+          { role: 'system', content: 'Analyze the provided study text. Return a JSON object with: summary (string), keyTopics (array of strings), importantConcepts (array of strings).' },
+          { role: 'user', content: prompt }
+        ], { response_format: { type: 'json_object' } });
+        if (rawText) {
+          const cleaned = rawText.replace(/^```json\s*/, '').replace(/```$/, '').trim();
+          const parsed = JSON.parse(cleaned);
+          return MaterialAnalysisZodSchema.parse(parsed);
+        }
+      } catch (err: any) {
+        logger.warn(`Failed to parse Granite Material Analysis: ${err.message || String(err)}`);
+      }
+    }
+
+    // 2. Try Google Gemini API Cascade
     const geminiText = await callGeminiCascade(prompt, { responseMimeType: 'application/json' });
     if (geminiText) {
       try {
@@ -284,7 +375,7 @@ ${text.slice(0, 8000)}`;
       }
     }
 
-    // 2. Try OpenAI API if available
+    // 3. Try OpenAI API if available
     if (openaiClient) {
       try {
         const response = await openaiClient.chat.completions.create({
@@ -786,7 +877,23 @@ Required JSON Output format (strictly valid JSON, no markdown wrappers):
   }
 }`;
 
-    // 1. Try Google Gemini API Cascade
+    // 1. Try IBM Granite if configured
+    if (graniteClient) {
+      try {
+        const rawText = await callGraniteCascade([
+          { role: 'system', content: 'You are EduMentor AI diagnostic mistake analyst. Analyze the error and return strictly valid JSON matching the user prompt structure.' },
+          { role: 'user', content: prompt }
+        ], { response_format: { type: 'json_object' } });
+        if (rawText) {
+          const cleaned = rawText.replace(/^```json\s*/, '').replace(/```$/, '').trim();
+          return JSON.parse(cleaned);
+        }
+      } catch (err: any) {
+        logger.warn(`Failed to parse Granite Explain Mistake: ${err.message || String(err)}`);
+      }
+    }
+
+    // 2. Try Google Gemini API Cascade
     const geminiMistake = await callGeminiCascade(prompt, { responseMimeType: 'application/json' });
     if (geminiMistake) {
       try {
@@ -868,7 +975,23 @@ Return strictly a JSON object with this structure:
   ]
 }`;
 
-    // 1. Try Google Gemini API Cascade
+    // 1. Try IBM Granite if configured
+    if (graniteClient) {
+      try {
+        const rawText = await callGraniteCascade([
+          { role: 'system', content: 'You are EduMentor AI study timetable planner. Return strictly valid JSON matching the user prompt structure.' },
+          { role: 'user', content: prompt }
+        ], { response_format: { type: 'json_object' } });
+        if (rawText) {
+          const cleaned = rawText.replace(/^```json\s*/, '').replace(/```$/, '').trim();
+          return JSON.parse(cleaned);
+        }
+      } catch (err: any) {
+        logger.warn(`Failed to parse Granite Study Plan: ${err.message || String(err)}`);
+      }
+    }
+
+    // 2. Try Google Gemini API Cascade
     const geminiPlan = await callGeminiCascade(prompt, { responseMimeType: 'application/json' });
     if (geminiPlan) {
       try {

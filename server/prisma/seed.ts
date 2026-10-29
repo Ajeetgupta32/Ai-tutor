@@ -1,7 +1,59 @@
+import bcrypt from 'bcryptjs';
 import { prisma } from '../src/config/prisma.js';
 
 async function main() {
   console.log('🌱 Seeding PostgreSQL database for EduMentor AI...');
+
+  // 1. Ensure the exclusive Admin user exists
+  const adminSalt = await bcrypt.genSalt(10);
+  const adminHash = await bcrypt.hash('harshita123', adminSalt);
+  await prisma.user.upsert({
+    where: { email: 'harshita123@gmail.com' },
+    update: {
+      passwordHash: adminHash,
+      role: 'admin',
+      isEmailVerified: true,
+      name: 'Harshita Admin',
+    },
+    create: {
+      name: 'Harshita Admin',
+      email: 'harshita123@gmail.com',
+      passwordHash: adminHash,
+      role: 'admin',
+      isEmailVerified: true,
+    },
+  });
+  console.log('✅ Admin account configured: harshita123@gmail.com');
+
+  // Demote any other accounts if they ever had admin role
+  await prisma.user.updateMany({
+    where: {
+      role: 'admin',
+      email: { not: 'harshita123@gmail.com' },
+    },
+    data: { role: 'student' },
+  });
+
+  // 2. Ensure Demo Student accounts exist
+  const studentSalt = await bcrypt.genSalt(10);
+  const studentHash = await bcrypt.hash('student123', studentSalt);
+  await prisma.user.upsert({
+    where: { email: 'student@edumentor.ai' },
+    update: {
+      passwordHash: studentHash,
+      role: 'student',
+      isEmailVerified: true,
+      name: 'Demo Student',
+    },
+    create: {
+      name: 'Demo Student',
+      email: 'student@edumentor.ai',
+      passwordHash: studentHash,
+      role: 'student',
+      isEmailVerified: true,
+    },
+  });
+  console.log('✅ Demo student account configured: student@edumentor.ai (Pass: student123)');
 
   const defaultSubjects = [
     {

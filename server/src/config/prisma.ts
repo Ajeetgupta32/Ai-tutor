@@ -1,3 +1,5 @@
+import dns from 'dns';
+dns.setDefaultResultOrder('ipv4first');
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
@@ -6,7 +8,7 @@ import path from 'path';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-const connectionString = process.env.DATABASE_URL || '';
+const connectionString = (process.env.DATABASE_URL || '').replace(/"/g, '').trim();
 const pool = new pg.Pool({ connectionString });
 const urlSchemaMatch = connectionString.match(/schema=([^&]+)/);
 const schema = urlSchemaMatch ? urlSchemaMatch[1] : 'public';

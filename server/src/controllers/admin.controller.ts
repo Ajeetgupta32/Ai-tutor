@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/prisma.js';
+import { config } from '../config/env.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AppError } from '../utils/appError.js';
 
@@ -701,7 +702,8 @@ export const getAiAnalytics = asyncHandler(async (req: Request, res: Response) =
       featureBreakdown,
       recentAiLogs,
       modelConfig: {
-        activeModel: 'gemini-2.5-flash',
+        activeModel: config.graniteModel || 'ibm-granite/granite-4.2-30b',
+        activeProvider: config.aiProvider || 'granite',
         temperature: 0.7,
         eli10ModeEnabled: true,
         voiceTtsEnabled: true,
